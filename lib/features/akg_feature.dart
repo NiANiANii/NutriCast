@@ -1,0 +1,190 @@
+class AKGFeature {
+  static final List<Map<String, dynamic>> akgData = [
+    {
+      "ageRange": "0-5 bulan",
+      "gender": "Semua",
+      "energy": 550,
+      "protein": 10,
+      "fat": 34,
+      "carbs": 60,
+      "fiber": "-",
+      "water": 700,
+    },
+    {
+      "ageRange": "6-11 bulan",
+      "gender": "Semua",
+      "energy": 725,
+      "protein": 15,
+      "fat": 36,
+      "carbs": 95,
+      "fiber": "-",
+      "water": 800,
+    },
+    {
+      "ageRange": "1-3 tahun",
+      "gender": "Semua",
+      "energy": 1125,
+      "protein": 20,
+      "fat": 44,
+      "carbs": 155,
+      "fiber": 19,
+      "water": 1200,
+    },
+    {
+      "ageRange": "4-6 tahun",
+      "gender": "Semua",
+      "energy": 1600,
+      "protein": 25,
+      "fat": 62,
+      "carbs": 220,
+      "fiber": 20,
+      "water": 1500,
+    },
+    {
+      "ageRange": "7-9 tahun",
+      "gender": "Semua",
+      "energy": 1850,
+      "protein": 40,
+      "fat": 72,
+      "carbs": 260,
+      "fiber": 23,
+      "water": 1700,
+    },
+    {
+      "ageRange": "10-12 tahun",
+      "gender": "Laki-laki",
+      "energy": 2050,
+      "protein": 50,
+      "fat": 73,
+      "carbs": 275,
+      "fiber": 26,
+      "water": 1900,
+    },
+    {
+      "ageRange": "13-15 tahun",
+      "gender": "Laki-laki",
+      "energy": 2475,
+      "protein": 70,
+      "fat": 88,
+      "carbs": 325,
+      "fiber": 30,
+      "water": 2200,
+    },
+    {
+      "ageRange": "16-18 tahun",
+      "gender": "Laki-laki",
+      "energy": 2675,
+      "protein": 75,
+      "fat": 93,
+      "carbs": 350,
+      "fiber": 34,
+      "water": 2300,
+    },
+    {
+      "ageRange": "19-29 tahun",
+      "gender": "Laki-laki",
+      "energy": 2650,
+      "protein": 65,
+      "fat": 85,
+      "carbs": 345,
+      "fiber": 37,
+      "water": 2500,
+    },
+    {
+      "ageRange": "30-49 tahun",
+      "gender": "Laki-laki",
+      "energy": 2600,
+      "protein": 65,
+      "fat": 80,
+      "carbs": 340,
+      "fiber": 37,
+      "water": 2500,
+    },
+    {
+      "ageRange": "50-64 tahun",
+      "gender": "Laki-laki",
+      "energy": 2300,
+      "protein": 64,
+      "fat": 67,
+      "carbs": 300,
+      "fiber": 30,
+      "water": 2300,
+    },
+    {
+      "ageRange": "65-80 tahun",
+      "gender": "Laki-laki",
+      "energy": 1900,
+      "protein": 64,
+      "fat": 57,
+      "carbs": 250,
+      "fiber": 25,
+      "water": 2100,
+    },
+    {
+      "ageRange": "10-12 tahun",
+      "gender": "Perempuan",
+      "energy": 2000,
+      "protein": 55,
+      "fat": 67,
+      "carbs": 275,
+      "fiber": 26,
+      "water": 1900,
+    },
+    {
+      "ageRange": "13-15 tahun",
+      "gender": "Perempuan",
+      "energy": 2125,
+      "protein": 65,
+      "fat": 71,
+      "carbs": 290,
+      "fiber": 30,
+      "water": 2100,
+    },
+    {
+      "ageRange": "16-18 tahun",
+      "gender": "Perempuan",
+      "energy": 2125,
+      "protein": 65,
+      "fat": 71,
+      "carbs": 290,
+      "fiber": 30,
+      "water": 2100,
+    },
+    {
+      "ageRange": "19-29 tahun",
+      "gender": "Perempuan",
+      "energy": 2250,
+      "protein": 60,
+      "fat": 72,
+      "carbs": 300,
+      "fiber": 32,
+      "water": 2300,
+    },
+    {
+      "ageRange": "30-49 tahun",
+      "gender": "Perempuan",
+      "energy": 2150,
+      "protein": 60,
+      "fat": 67,
+      "carbs": 290,
+      "fiber": 32,
+      "water": 2300,
+    },
+  ];
+
+  static Map<String, dynamic>? getAKG(int age, String gender) {
+    for (var akg in akgData) {
+      List<String> ageRange = akg["ageRange"].split("-");
+      int startAge = int.parse(ageRange[0]);
+      int endAge =
+          ageRange.length > 1 ? int.parse(ageRange[1].split(" ")[0]) : startAge;
+
+      if (age >= startAge &&
+          age <= endAge &&
+          (akg["gender"] == gender || akg["gender"] == "Semua")) {
+        return akg;
+      }
+    }
+    return null;
+  }
+}
