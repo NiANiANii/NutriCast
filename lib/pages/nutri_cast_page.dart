@@ -181,8 +181,9 @@ class _NutriCastPageState extends State<NutriCastPage> {
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return 'Masukkan tinggi badan';
+                }
                 final height = double.tryParse(value);
                 if (height == null) return 'Harus angka';
                 if (height < 50 || height > 250) return '50-250 cm';
@@ -201,8 +202,9 @@ class _NutriCastPageState extends State<NutriCastPage> {
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
-                if (value == null || value.isEmpty)
+                if (value == null || value.isEmpty) {
                   return 'Masukkan berat badan';
+                }
                 final weight = double.tryParse(value);
                 if (weight == null) return 'Harus angka';
                 if (weight < 3 || weight > 300) return '3-300 kg';

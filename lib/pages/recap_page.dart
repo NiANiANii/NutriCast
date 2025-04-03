@@ -136,7 +136,7 @@ class _RecapPageState extends State<RecapPage> {
                 _buildInfoCard('Tinggi Badan', '${_userData['height']} cm'),
                 _buildInfoCard('Berat Badan', '${_userData['weight']} kg'),
                 _buildInfoCard(
-                  'Indeks Massa Tubuh',
+                  'Indeks Massa',
                   '${_userData['imt'].toStringAsFixed(1)} (${_userData['status']})',
                 ),
               ],
