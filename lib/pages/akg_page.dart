@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../features/akg_feature.dart';
+import 'package:flutter/services.dart';
 
 class AKGPage extends StatelessWidget {
   final int? age;
@@ -17,6 +19,9 @@ class AKGPage extends StatelessWidget {
     final akgData =
         AKGFeature.getAKG(age!, gender!) ?? _getDefaultAKGData(gender!);
 
+    // Save AKG data to SharedPreferences for RecapPage
+    _saveAKGData(akgData);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Angka Kecukupan Gizi (AKG)"),
@@ -24,6 +29,10 @@ class AKGPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showInfoDialog(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () => _shareData(context, akgData),
           ),
         ],
       ),
@@ -70,7 +79,23 @@ class AKGPage extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _saveAKGDataToClipboard(context, akgData),
+        tooltip: 'Salin Data',
+        child: const Icon(Icons.copy),
+      ),
     );
+  }
+
+  Future<void> _saveAKGData(Map<String, dynamic> akgData) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('akgEnergy', akgData["energy"]);
+    await prefs.setInt('akgProtein', akgData["protein"]);
+    await prefs.setInt('akgFat', akgData["fat"]);
+    await prefs.setInt('akgCarbs', akgData["carbs"]);
+    await prefs.setInt('akgFiber', akgData["fiber"]);
+    await prefs.setInt('akgWater', akgData["water"]);
+    await prefs.setString('akgAgeRange', akgData["ageRange"]);
   }
 
   Widget _buildMissingDataScreen(BuildContext context) {
@@ -100,7 +125,17 @@ class AKGPage extends StatelessWidget {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: const Text("Ke Halaman NutriCast"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                "Ke Halaman NutriCast",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -131,28 +166,40 @@ class AKGPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              "Profil Gizi Anda",
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.green[700],
-              ),
+            Row(
+              children: [
+                Icon(Icons.person_outline, color: Colors.green[700]),
+                const SizedBox(width: 8),
+                Text(
+                  "Profil Gizi Anda",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[700],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Kelompok Umur: ${akg["ageRange"]}",
-              style: const TextStyle(fontSize: 16),
-            ),
-            Text(
-              "Jenis Kelamin: ${akg["gender"]}",
-              style: const TextStyle(fontSize: 16),
-            ),
-            if (age != null) ...[
-              const SizedBox(height: 8),
-              Text("Usia: $age tahun", style: const TextStyle(fontSize: 16)),
-            ],
+            const Divider(height: 24, thickness: 1),
+            _buildProfileItem("Kelompok Umur", akg["ageRange"]),
+            _buildProfileItem("Jenis Kelamin", akg["gender"]),
+            if (age != null) _buildProfileItem("Usia", "$age tahun"),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Text(
+            "$label: ",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Text(value, style: const TextStyle(fontSize: 16)),
+        ],
       ),
     );
   }
@@ -188,9 +235,23 @@ class AKGPage extends StatelessWidget {
                   RadialAxis(
                     minimum: 0,
                     maximum: max,
-                    showLabels: true,
-                    showTicks: true,
-                    axisLabelStyle: const GaugeTextStyle(fontSize: 12),
+                    ranges: <GaugeRange>[
+                      GaugeRange(
+                        startValue: 0,
+                        endValue: max * 0.7,
+                        color: Colors.grey[200],
+                      ),
+                      GaugeRange(
+                        startValue: max * 0.7,
+                        endValue: max * 0.9,
+                        color: Colors.blue[100],
+                      ),
+                      GaugeRange(
+                        startValue: max * 0.9,
+                        endValue: max,
+                        color: color.withOpacity(0.3),
+                      ),
+                    ],
                     pointers: <GaugePointer>[
                       NeedlePointer(
                         value: numericValue,
@@ -198,42 +259,37 @@ class AKGPage extends StatelessWidget {
                         knobStyle: KnobStyle(
                           color: color,
                           sizeUnit: GaugeSizeUnit.logicalPixel,
-                          knobRadius: 8,
+                          knobRadius: 5,
                         ),
                       ),
                     ],
                     annotations: <GaugeAnnotation>[
                       GaugeAnnotation(
-                        widget: Container(
-                          padding: const EdgeInsets.only(top: 20),
-                          child: Text(
-                            "$value $unit",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: color,
-                            ),
+                        widget: Text(
+                          "$value $unit",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: color,
                           ),
                         ),
                         angle: 90,
-                        positionFactor:
-                            0.8, // Mengatur posisi agar tidak overlap
+                        positionFactor: 0.5,
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8),
             LinearProgressIndicator(
               value: percentage,
               backgroundColor: Colors.grey[200],
               color:
                   percentage > 0.9
-                      ? Colors.red
+                      ? color
                       : percentage > 0.7
-                      ? Colors.orange
-                      : color,
+                      ? Colors.green
+                      : Colors.green,
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -266,9 +322,18 @@ class AKGPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(Icons.restaurant_menu, color: Colors.green[700]),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             ...children,
@@ -300,7 +365,11 @@ class AKGPage extends StatelessWidget {
       builder:
           (context) => AlertDialog(
             title: const Text("Informasi AKG"),
-            content: const Text("Angka Kecukupan Gizi (AKG) adalah ..."),
+            content: const Text(
+              "Angka Kecukupan Gizi (AKG) adalah rata-rata kebutuhan energi dan zat gizi "
+              "yang dianjurkan untuk kelompok umur dan jenis kelamin tertentu.\n\n"
+              "Data ini digunakan sebagai acuan untuk memenuhi kebutuhan gizi harian Anda.",
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -308,6 +377,55 @@ class AKGPage extends StatelessWidget {
               ),
             ],
           ),
+    );
+  }
+
+  void _shareData(BuildContext context, Map<String, dynamic> akgData) {
+    final shareText =
+        'Angka Kecukupan Gizi (AKG)\n'
+        '--------------------------\n'
+        'Kelompok Umur: ${akgData["ageRange"]}\n'
+        'Jenis Kelamin: ${akgData["gender"]}\n'
+        'Energi: ${akgData["energy"]} kkal\n'
+        'Protein: ${akgData["protein"]} g\n'
+        'Lemak: ${akgData["fat"]} g\n'
+        'Karbohidrat: ${akgData["carbs"]} g\n'
+        'Serat: ${akgData["fiber"]} g\n'
+        'Air: ${akgData["water"]} ml';
+
+    // Actually use the shareText variable by copying to clipboard
+    Clipboard.setData(ClipboardData(text: shareText));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Data AKG disalin ke clipboard'),
+        action: SnackBarAction(label: 'OK', onPressed: () {}),
+      ),
+    );
+  }
+
+  Future<void> _saveAKGDataToClipboard(
+    BuildContext context,
+    Map<String, dynamic> akgData,
+  ) async {
+    final data = '''
+      ===== REKAP KEBUTUHAN GIZI =====
+      Usia: $age tahun
+      Jenis Kelamin: ${akgData["gender"]}
+      Kelompok Umur: ${akgData["ageRange"]}
+      
+      === KEBUTUHAN HARIAN ===
+      Energi: ${akgData["energy"]} kkal
+      Protein: ${akgData["protein"]} g
+      Lemak: ${akgData["fat"]} g
+      Karbohidrat: ${akgData["carbs"]} g
+      Serat: ${akgData["fiber"]} g
+      Air: ${akgData["water"]} ml
+    ''';
+
+    await Clipboard.setData(ClipboardData(text: data));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Data AKG disalin ke clipboard')),
     );
   }
 }

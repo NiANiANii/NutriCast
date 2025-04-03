@@ -36,41 +36,60 @@ class _NutriCastPageState extends State<NutriCastPage> {
       _heightController.text = prefs.getDouble('userHeight')?.toString() ?? '';
       _weightController.text = prefs.getDouble('userWeight')?.toString() ?? '';
       _isSubmitted = prefs.getBool('isSubmitted') ?? false;
+
+      // Load existing IMT result if available
+      final savedIMT = prefs.getDouble('userIMT');
+      if (savedIMT != null) {
+        _result =
+            'IMT: ${savedIMT.toStringAsFixed(2)}\nStatus: ${NutriCastFeature.getGiziStatus(savedIMT)}';
+      }
     });
   }
 
   Future<void> _submitData() async {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
+
+      // Parse input values
+      final age = int.parse(_ageController.text);
+      final height = double.parse(_heightController.text);
+      final weight = double.parse(_weightController.text);
+
+      // Calculate IMT using the feature class
+      final imt = _calculateIMT(height, weight);
+      final status = NutriCastFeature.getGiziStatus(imt);
+
+      // Save all data
       await prefs.setString('userName', _nameController.text);
       await prefs.setString('userGender', _gender);
-      await prefs.setInt('userAge', int.parse(_ageController.text));
-      await prefs.setDouble('userHeight', double.parse(_heightController.text));
-      await prefs.setDouble('userWeight', double.parse(_weightController.text));
+      await prefs.setInt('userAge', age);
+      await prefs.setDouble('userHeight', height);
+      await prefs.setDouble('userWeight', weight);
+      await prefs.setDouble('userIMT', imt);
       await prefs.setBool('isSubmitted', true);
 
-      _calculateIMT();
-      widget.onDataSubmitted(int.parse(_ageController.text), _gender);
-
+      // Update UI
       setState(() {
+        _result = 'IMT: ${imt.toStringAsFixed(2)}\nStatus: $status';
         _isSubmitted = true;
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Data berhasil disimpan!')));
+      // Notify parent widget
+      widget.onDataSubmitted(age, _gender);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Data berhasil disimpan!'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
-  void _calculateIMT() {
-    double height = double.parse(_heightController.text) / 100;
-    double weight = double.parse(_weightController.text);
-    double imt = weight / (height * height);
-    String status = NutriCastFeature.getGiziStatus(imt);
-
-    setState(() {
-      _result = 'IMT: ${imt.toStringAsFixed(2)}\nStatus: $status';
-    });
+  double _calculateIMT(double height, double weight) {
+    if (height == 0) return 0;
+    return weight / ((height / 100) * (height / 100));
   }
 
   @override
@@ -101,6 +120,8 @@ class _NutriCastPageState extends State<NutriCastPage> {
               decoration: const InputDecoration(
                 labelText: 'Nama',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
               validator:
                   (value) =>
@@ -120,11 +141,15 @@ class _NutriCastPageState extends State<NutriCastPage> {
               decoration: const InputDecoration(
                 labelText: 'Jenis Kelamin',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
               onChanged:
                   _isSubmitted
                       ? null
                       : (value) => setState(() => _gender = value!),
+              validator:
+                  (value) => value == null ? 'Pilih jenis kelamin' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -132,6 +157,8 @@ class _NutriCastPageState extends State<NutriCastPage> {
               decoration: const InputDecoration(
                 labelText: 'Usia (tahun)',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
@@ -149,12 +176,13 @@ class _NutriCastPageState extends State<NutriCastPage> {
               decoration: const InputDecoration(
                 labelText: 'Tinggi Badan (cm)',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null || value.isEmpty)
                   return 'Masukkan tinggi badan';
-                }
                 final height = double.tryParse(value);
                 if (height == null) return 'Harus angka';
                 if (height < 50 || height > 250) return '50-250 cm';
@@ -168,12 +196,13 @@ class _NutriCastPageState extends State<NutriCastPage> {
               decoration: const InputDecoration(
                 labelText: 'Berat Badan (kg)',
                 border: OutlineInputBorder(),
+                filled: true,
+                fillColor: Colors.white,
               ),
               keyboardType: TextInputType.number,
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null || value.isEmpty)
                   return 'Masukkan berat badan';
-                }
                 final weight = double.tryParse(value);
                 if (weight == null) return 'Harus angka';
                 if (weight < 3 || weight > 300) return '3-300 kg';
@@ -189,10 +218,11 @@ class _NutriCastPageState extends State<NutriCastPage> {
                   onPressed: _submitData,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.green,
                   ),
                   child: const Text(
-                    'SUBMIT DATA',
-                    style: TextStyle(fontSize: 16),
+                    'SIMPAN DATA',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
               )
@@ -213,7 +243,7 @@ class _NutriCastPageState extends State<NutriCastPage> {
                   ),
                   child: const Text(
                     'EDIT DATA',
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, color: Colors.green),
                   ),
                 ),
               ),
