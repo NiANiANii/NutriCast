@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../features/akg_feature.dart';
-import 'package:flutter/services.dart';
 
 class AKGPage extends StatelessWidget {
   final int? age;
@@ -19,8 +18,7 @@ class AKGPage extends StatelessWidget {
     final akgData =
         AKGFeature.getAKG(age!, gender!) ?? _getDefaultAKGData(gender!);
 
-    // Save AKG data to SharedPreferences for RecapPage
-    _saveAKGData(akgData);
+    _saveAKGData(akgData); // Simpan untuk RecapPage
 
     return Scaffold(
       appBar: AppBar(
@@ -29,10 +27,6 @@ class AKGPage extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: () => _showInfoDialog(context),
-          ),
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareData(context, akgData),
           ),
         ],
       ),
@@ -79,11 +73,6 @@ class AKGPage extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _saveAKGDataToClipboard(context, akgData),
-        tooltip: 'Salin Data',
-        child: const Icon(Icons.copy),
-      ),
     );
   }
 
@@ -115,7 +104,7 @@ class AKGPage extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 32),
               child: Text(
-                "Silakan lengkapi data usia dan jenis kelamin pada halaman NutriCast terlebih dahulu",
+                "Silakan lengkapi data usia dan jenis kelamin pada halaman Home terlebih dahulu",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16),
               ),
@@ -133,7 +122,7 @@ class AKGPage extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                "Ke Halaman NutriCast",
+                "Ke Halaman Home",
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -284,12 +273,7 @@ class AKGPage extends StatelessWidget {
             LinearProgressIndicator(
               value: percentage,
               backgroundColor: Colors.grey[200],
-              color:
-                  percentage > 0.9
-                      ? color
-                      : percentage > 0.7
-                      ? Colors.green
-                      : Colors.green,
+              color: percentage > 0.9 ? color : Colors.green,
               minHeight: 8,
               borderRadius: BorderRadius.circular(4),
             ),
@@ -377,55 +361,6 @@ class AKGPage extends StatelessWidget {
               ),
             ],
           ),
-    );
-  }
-
-  void _shareData(BuildContext context, Map<String, dynamic> akgData) {
-    final shareText =
-        'Angka Kecukupan Gizi (AKG)\n'
-        '--------------------------\n'
-        'Kelompok Umur: ${akgData["ageRange"]}\n'
-        'Jenis Kelamin: ${akgData["gender"]}\n'
-        'Energi: ${akgData["energy"]} kkal\n'
-        'Protein: ${akgData["protein"]} g\n'
-        'Lemak: ${akgData["fat"]} g\n'
-        'Karbohidrat: ${akgData["carbs"]} g\n'
-        'Serat: ${akgData["fiber"]} g\n'
-        'Air: ${akgData["water"]} ml';
-
-    // Actually use the shareText variable by copying to clipboard
-    Clipboard.setData(ClipboardData(text: shareText));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Data AKG disalin ke clipboard'),
-        action: SnackBarAction(label: 'OK', onPressed: () {}),
-      ),
-    );
-  }
-
-  Future<void> _saveAKGDataToClipboard(
-    BuildContext context,
-    Map<String, dynamic> akgData,
-  ) async {
-    final data = '''
-      ===== REKAP KEBUTUHAN GIZI =====
-      Usia: $age tahun
-      Jenis Kelamin: ${akgData["gender"]}
-      Kelompok Umur: ${akgData["ageRange"]}
-      
-      === KEBUTUHAN HARIAN ===
-      Energi: ${akgData["energy"]} kkal
-      Protein: ${akgData["protein"]} g
-      Lemak: ${akgData["fat"]} g
-      Karbohidrat: ${akgData["carbs"]} g
-      Serat: ${akgData["fiber"]} g
-      Air: ${akgData["water"]} ml
-    ''';
-
-    await Clipboard.setData(ClipboardData(text: data));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data AKG disalin ke clipboard')),
     );
   }
 }

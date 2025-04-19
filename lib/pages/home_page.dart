@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'akg_page.dart';
+import 'recap_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../features/nutri_cast_feature.dart';
 
-class NutriCastPage extends StatefulWidget {
-  final Function(int age, String gender) onDataSubmitted;
-
-  const NutriCastPage({super.key, required this.onDataSubmitted});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  _NutriCastPageState createState() => _NutriCastPageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _NutriCastPageState extends State<NutriCastPage> {
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+  int? _userAge;
+  String? _userGender;
+
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   String _gender = 'Laki-laki';
@@ -37,12 +41,14 @@ class _NutriCastPageState extends State<NutriCastPage> {
       _weightController.text = prefs.getDouble('userWeight')?.toString() ?? '';
       _isSubmitted = prefs.getBool('isSubmitted') ?? false;
 
-      // Load existing IMT result if available
       final savedIMT = prefs.getDouble('userIMT');
       if (savedIMT != null) {
         _result =
             'IMT: ${savedIMT.toStringAsFixed(2)}\nStatus: ${NutriCastFeature.getGiziStatus(savedIMT)}';
       }
+
+      _userAge = prefs.getInt('userAge');
+      _userGender = prefs.getString('userGender');
     });
   }
 
@@ -50,16 +56,12 @@ class _NutriCastPageState extends State<NutriCastPage> {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
 
-      // Parse input values
       final age = int.parse(_ageController.text);
       final height = double.parse(_heightController.text);
       final weight = double.parse(_weightController.text);
-
-      // Calculate IMT using the feature class
       final imt = _calculateIMT(height, weight);
       final status = NutriCastFeature.getGiziStatus(imt);
 
-      // Save all data
       await prefs.setString('userName', _nameController.text);
       await prefs.setString('userGender', _gender);
       await prefs.setInt('userAge', age);
@@ -68,16 +70,13 @@ class _NutriCastPageState extends State<NutriCastPage> {
       await prefs.setDouble('userIMT', imt);
       await prefs.setBool('isSubmitted', true);
 
-      // Update UI
       setState(() {
         _result = 'IMT: ${imt.toStringAsFixed(2)}\nStatus: $status';
         _isSubmitted = true;
+        _userAge = age;
+        _userGender = _gender;
       });
 
-      // Notify parent widget
-      widget.onDataSubmitted(age, _gender);
-
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Data berhasil disimpan!'),
@@ -92,17 +91,7 @@ class _NutriCastPageState extends State<NutriCastPage> {
     return weight / ((height / 100) * (height / 100));
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _ageController.dispose();
-    _heightController.dispose();
-    _weightController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHomePage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
@@ -267,6 +256,71 @@ class _NutriCastPageState extends State<NutriCastPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentPage() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildHomePage(); // Home = NutriCast + fitur tambahan (bisa nanti)
+      case 1:
+        return AKGPage(age: _userAge, gender: _userGender);
+      case 2:
+        return const RecapPage();
+      default:
+        return const Center(child: Text('Halaman tidak ditemukan'));
+    }
+  }
+
+  void _onItemTapped(int index) {
+    if ((index == 2 || index == 3) &&
+        (_userAge == null || _userGender == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Silakan lengkapi data diri terlebih dahulu di halaman Home',
+          ),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('NutriCast App')),
+      body: _buildCurrentPage(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.question_answer),
+            label: 'Kuesioner',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'AKG'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.receipt_long),
+            label: 'Rekap',
+          ),
+        ],
       ),
     );
   }
